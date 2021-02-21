@@ -3,14 +3,19 @@ package com.alissa.skitracker;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -29,6 +34,8 @@ import io.socket.emitter.Emitter;
 
 public class MainActivity extends AppCompatActivity {
 
+    //private SocketService socketService;
+
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
     private String friendCode;
@@ -38,19 +45,19 @@ public class MainActivity extends AppCompatActivity {
     private FriendAdapter friendAdapter;
 
     private Socket mSocket;
-    {
-        try {
-            mSocket = IO.socket("http://bw373.brighton.domains:50000/");
-        } catch (URISyntaxException e) {
-            Log.e(LOG_TAG + " OwO an ewwor", e.toString());
-        }
-    }
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        try {
+            mSocket = IO.socket("http://bw373.brighton.domains:50000/");
+        } catch (URISyntaxException e) {
+            Log.e(LOG_TAG + " OwO an ewwor", e.toString());
+        }
+
+
         mSocket.on("confirmConnection", onConfirmConnection);
         mSocket.on("recieveFriendsStatus", onRecieveFriendsStatus);
         mSocket.on("onRecieveMyFriendCode", onRecieveMyFriendCode);
@@ -59,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
         friendAdapter = new FriendAdapter(this, friends);
         ListView listView = (ListView) findViewById(R.id.lv_friendList);
         listView.setAdapter(friendAdapter);
+
 
     }
 
@@ -69,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void call(Object... args) {
             JSONObject data = (JSONObject) args[0];
-            System.out.println("---------------onRecieveMyFriendCode----------------");
+            System.out.println("---------------onRecieveMyFriendCode - FRIENDS----------------");
             System.out.println(data.toString());
 
             TextView myFriendCodeText = findViewById(R.id.tv_myFriendCode);
@@ -93,12 +101,13 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void call(Object... args) {
             JSONObject data = (JSONObject) args[0];
-            System.out.println("---------------onConfirmConnection----------------");
+            System.out.println("---------------onConfirmConnection - FRIENDS----------------");
             System.out.println(data.toString());
 
             // the connection has been confirmed so send the id
             String id = Settings.Secure.getString(getApplicationContext().getContentResolver(),Settings.Secure.ANDROID_ID);
             mSocket.emit("recieveDeviceID", id.substring(0, 8)); // send the first half of the device id
+            mSocket.emit("recieveCanBeJoined", false);
         }
     };
 
@@ -111,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void call(Object... args) {
             JSONObject data = (JSONObject) args[0];
-            System.out.println("--------------recieveFriendsStatus-----------------");
+            System.out.println("--------------recieveFriendsStatus - FRIENDS-----------------");
             System.out.println(data.toString());
             Iterator<String> keysIterator = data.keys();
             ArrayList<String> keys = new ArrayList<String>();
@@ -125,7 +134,8 @@ public class MainActivity extends AppCompatActivity {
                     JSONObject userData = data.getJSONObject(key);
                     String name = userData.getString("name");
                     boolean online = userData.getBoolean("online");
-                    friends.add(new Friend(name, key, online));
+                    boolean canBeJoined = userData.getBoolean("canBeJoined");
+                    friends.add(new Friend(name, key, online, canBeJoined));
                 } catch (JSONException e){
                     Log.e(LOG_TAG, e.toString());
                 }
@@ -153,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void call(Object... args) {
             JSONObject data = (JSONObject) args[0];
-            System.out.println("--------------onRecieveAddFriendSuccessCode-----------------");
+            System.out.println("--------------onRecieveAddFriendSuccessCode - FRIENDS-----------------");
             System.out.println(data.toString());
 
             EditText et_addFriend = findViewById(R.id.et_addFriend);
@@ -205,6 +215,46 @@ public class MainActivity extends AppCompatActivity {
 
 
     /**
+     * Press the join button next to a friend to join them
+     * @param v
+     */
+    public void joinButtonPressed(View v){
+
+        View parentRow = (View) v.getParent();
+        ListView listView = (ListView) parentRow.getParent();
+        final int position = listView.getPositionForView(parentRow);
+
+        Friend friend = friends.get(position);
+        System.out.println(friend.getName() + " " + friend.getCode());
+
+        if(friend.getcanBeJoined() == true){
+            //send the friend code to the server to start watching them
+
+
+            //go to the map view in watching mode
+            Intent mapIntent = new Intent(MainActivity.this, MapActivity.class);
+
+            mapIntent.putExtra("watching", true);
+            mapIntent.putExtra("watchingCode", friend.getCode());
+            startActivity(mapIntent);
+
+        }
+
+    }
+
+    /**
+     * press the map button to open the map view
+     * this makes the user joinable
+     */
+    public void openMap(View v){
+
+        Intent mapIntent = new Intent(MainActivity.this, MapActivity.class);
+        mapIntent.putExtra("watching", false);
+        startActivity(mapIntent);
+    }
+
+
+    /**
      * when the app is closed the socket connection is closed
      * this runs code on the server to tell this users friends that they are offline
      */
@@ -212,5 +262,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         mSocket.disconnect();
+        mSocket.close();
     }
+
 }

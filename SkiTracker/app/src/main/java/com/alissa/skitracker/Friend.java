@@ -9,11 +9,14 @@ public class Friend {
 
     private boolean online;
 
+    private boolean canBeJoined;
 
-    public Friend(String vName, String vCode, boolean vOnline){
+
+    public Friend(String vName, String vCode, boolean vOnline, boolean vCanBeJoined){
         name = vName;
         code = vCode;
         online = vOnline;
+        canBeJoined = vCanBeJoined;
     }
 
     public String getName() {
@@ -26,5 +29,9 @@ public class Friend {
 
     public boolean getOnline(){
         return online;
+    }
+
+    public boolean getcanBeJoined(){
+        return canBeJoined;
     }
 }

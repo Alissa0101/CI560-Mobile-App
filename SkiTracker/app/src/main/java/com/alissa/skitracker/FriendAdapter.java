@@ -37,13 +37,16 @@ public class FriendAdapter extends ArrayAdapter<Friend> {
         Button b_join = (Button) listItemView.findViewById(R.id.b_join);
 
         if(currentFriend.getOnline() == true){
-            b_join.setText("JOIN");
+            if(currentFriend.getcanBeJoined() == true){
+                b_join.setText("JOIN");
+            } else{
+                b_join.setText("ONLINE");
+            }
             b_join.setBackgroundColor(Color.GREEN);
         } else{
             b_join.setText("OFFLINE");
             b_join.setBackgroundColor(Color.RED);
         }
-
 
         return listItemView;
     }

@@ -27,6 +27,7 @@
         android:layout_marginEnd="12dp"
         android:background="#A52E2E"
         android:backgroundTint="#FFFFFF"
+        android:onClick="joinButtonPressed"
         android:text="OFFLINE"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tv_name"

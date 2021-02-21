@@ -6,6 +6,25 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <Button
+        android:id="@+id/b_map"
+        style="@style/Widget.AppCompat.Button"
+        android:layout_width="192dp"
+        android:layout_height="49dp"
+        android:onClick="openMap"
+        android:text="MAP"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/b_friends"
+        style="@style/Widget.AppCompat.Button"
+        android:layout_width="192dp"
+        android:layout_height="49dp"
+        android:text="FRIENDS"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <TextView
         android:id="@+id/tv_myFriendCode"
         android:layout_width="392dp"
@@ -71,11 +90,14 @@
 
     <ListView
         android:id="@+id/lv_friendList"
-        android:layout_width="412dp"
-        android:layout_height="547dp"
+        android:layout_width="410dp"
+        android:layout_height="498dp"
         android:layout_marginTop="28dp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/et_addFriend" />
+        app:layout_constraintTop_toBottomOf="@+id/et_addFriend">
+
+    </ListView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
