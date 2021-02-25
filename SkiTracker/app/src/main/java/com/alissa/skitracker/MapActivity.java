@@ -28,6 +28,8 @@ public class MapActivity extends AppCompatActivity {
 
     private Socket mSocket;
 
+    private String friendCode;
+
     private boolean watching = false;
 
 
@@ -42,9 +44,14 @@ public class MapActivity extends AppCompatActivity {
             Log.e(LOG_TAG + " OwO an ewwor", e.toString());
         }
         watching = getIntent().getBooleanExtra("watching", false);
+        friendCode = getIntent().getStringExtra("friendCode");
+
+        TextView tv_test = findViewById(R.id.tv_test);
+        tv_test.setText("My code: " + friendCode + "\n");
 
         mSocket.on("confirmConnection", onConfirmConnection);
         mSocket.on("recieveLocationData", onRecieveLocationData);
+        mSocket.on("watchRequest", onWatchRequest);
 
         mSocket.connect();
 
@@ -68,6 +75,31 @@ public class MapActivity extends AppCompatActivity {
         }
 
     }
+
+    private Emitter.Listener onWatchRequest = new Emitter.Listener() {
+        @Override
+        public void call(Object... args) {
+            JSONObject data = (JSONObject) args[0];
+            System.out.println("---------------onWatchRequest - MAP----------------");
+            System.out.println(data.toString());
+
+            TextView tv_test = findViewById(R.id.tv_test);
+            tv_test.setText(tv_test.getText() + data.toString() + "\n");
+
+
+            //show a confirm option to accept the watch request
+            JSONObject responseData = new JSONObject();
+            try{
+                responseData.put("confirm", true);
+                responseData.put("code", data.get("code"));
+                mSocket.emit("watchRequestResponse", responseData);
+            } catch (JSONException e){
+                Log.e(LOG_TAG, e.toString());
+            }
+
+
+        }
+    };
 
     private Emitter.Listener onRecieveLocationData = new Emitter.Listener() {
         @Override
@@ -96,7 +128,9 @@ public class MapActivity extends AppCompatActivity {
             String id = Settings.Secure.getString(getApplicationContext().getContentResolver(),Settings.Secure.ANDROID_ID);
             mSocket.emit("recieveDeviceID", id.substring(0, 8)); // send the first half of the device id
             mSocket.emit("recieveCanBeJoined", !watching);
-            mSocket.emit("recieveWatchingCode", getIntent().getStringExtra("watchingCode"));
+            if(watching == true){
+                mSocket.emit("recieveWatchingCode", getIntent().getStringExtra("watchingCode"));
+            }
         }
     };
 

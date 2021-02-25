@@ -235,6 +235,7 @@ public class MainActivity extends AppCompatActivity {
             Intent mapIntent = new Intent(MainActivity.this, MapActivity.class);
 
             mapIntent.putExtra("watching", true);
+            mapIntent.putExtra("friendCode", friendCode);
             mapIntent.putExtra("watchingCode", friend.getCode());
             startActivity(mapIntent);
 
@@ -250,6 +251,7 @@ public class MainActivity extends AppCompatActivity {
 
         Intent mapIntent = new Intent(MainActivity.this, MapActivity.class);
         mapIntent.putExtra("watching", false);
+        mapIntent.putExtra("friendCode", friendCode);
         startActivity(mapIntent);
     }
 
