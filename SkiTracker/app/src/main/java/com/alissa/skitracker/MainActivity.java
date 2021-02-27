@@ -18,6 +18,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -63,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
         mSocket.on("onRecieveMyFriendCode", onRecieveMyFriendCode);
         mSocket.on("onRecieveAddFriendSuccessCode", onRecieveAddFriendSuccessCode);
         mSocket.connect();
+
         friendAdapter = new FriendAdapter(this, friends);
         ListView listView = (ListView) findViewById(R.id.lv_friendList);
         listView.setAdapter(friendAdapter);
@@ -185,6 +187,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+
     /**
      * send an updated name to the server
      * @param v
@@ -267,4 +270,9 @@ public class MainActivity extends AppCompatActivity {
         mSocket.close();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mSocket.connect();
+    }
 }

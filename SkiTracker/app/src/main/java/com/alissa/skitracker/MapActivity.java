@@ -1,7 +1,16 @@
 package com.alissa.skitracker;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.ComponentName;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
@@ -9,12 +18,23 @@ import android.util.Log;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -22,7 +42,7 @@ import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
-public class MapActivity extends AppCompatActivity {
+public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
@@ -31,6 +51,34 @@ public class MapActivity extends AppCompatActivity {
     private String friendCode;
 
     private boolean watching = false;
+
+    private MapView mapView;
+
+    private String mapViewKey = "MapViewBundleKey";
+
+    private GoogleMap map = null;
+
+    private LocationManager locationManager;
+
+    private final LocationListener locationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(final Location location) {
+            //your code here
+            System.out.println(location.toString());
+        }
+
+        @Override
+        public void onStatusChanged(String s, int i, Bundle bundle) {
+        }
+
+        @Override
+        public void onProviderEnabled(String s) {
+        }
+
+        @Override
+        public void onProviderDisabled(String s) {
+        }
+    };
 
 
     @Override
@@ -46,24 +94,56 @@ public class MapActivity extends AppCompatActivity {
         watching = getIntent().getBooleanExtra("watching", false);
         friendCode = getIntent().getStringExtra("friendCode");
 
-        TextView tv_test = findViewById(R.id.tv_test);
-        tv_test.setText("My code: " + friendCode + "\n");
+        //TextView tv_test = findViewById(R.id.tv_test);
+        //tv_test.setText("My code: " + friendCode + "\n");
 
         mSocket.on("confirmConnection", onConfirmConnection);
         mSocket.on("recieveLocationData", onRecieveLocationData);
         mSocket.on("watchRequest", onWatchRequest);
 
+
         mSocket.connect();
 
+        Bundle mapViewBundle = null;
+        if (savedInstanceState != null) {
+            mapViewBundle = savedInstanceState.getBundle(mapViewKey);
+        }
+        mapView = (MapView) findViewById(R.id.map);
+        mapView.onCreate(mapViewBundle);
+
+        mapView.getMapAsync(this);
+
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000,
+                0.1f, locationListener);
 
 
-        if(watching == false){
+        if (watching == false) {
             new Timer().scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
                     JSONObject data = new JSONObject();
-                    try{
-                        data.put("time", Calendar.getInstance().getTime());
+                    try {
+
+                        Date time = Calendar.getInstance().getTime();
+
+                        Location loc = getLocation();
+
+                        data.put("time", time);
+                        data.put("lat", loc.getLatitude());
+                        data.put("lng", loc.getLatitude());
+                        data.put("alt", loc.getAltitude());
                         mSocket.emit("recieveNewLocationData", data);
                     } catch (JSONException e) {
                         Log.e(LOG_TAG, e.toString());
@@ -76,6 +156,18 @@ public class MapActivity extends AppCompatActivity {
 
     }
 
+    @SuppressLint("MissingPermission")
+    private Location getLocation(){
+        return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        //map is ready :D
+        map = googleMap;
+        map.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+    }
+
     private Emitter.Listener onWatchRequest = new Emitter.Listener() {
         @Override
         public void call(Object... args) {
@@ -83,23 +175,60 @@ public class MapActivity extends AppCompatActivity {
             System.out.println("---------------onWatchRequest - MAP----------------");
             System.out.println(data.toString());
 
-            TextView tv_test = findViewById(R.id.tv_test);
-            tv_test.setText(tv_test.getText() + data.toString() + "\n");
-
+            //TextView tv_test = findViewById(R.id.tv_test);
+            //tv_test.setText(tv_test.getText() + data.toString() + "\n");
 
             //show a confirm option to accept the watch request
-            JSONObject responseData = new JSONObject();
-            try{
-                responseData.put("confirm", true);
-                responseData.put("code", data.get("code"));
-                mSocket.emit("watchRequestResponse", responseData);
-            } catch (JSONException e){
-                Log.e(LOG_TAG, e.toString());
-            }
-
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    createConfirmationMenu(data);
+                }
+            });
 
         }
     };
+
+    private void createConfirmationMenu(JSONObject data){
+
+        try{
+
+            String name = data.getString("name");
+            String code = data.getString("code");
+            JSONObject responseData = new JSONObject();
+
+            new AlertDialog.Builder(MapActivity.this)
+                    .setTitle("Confirm friend")
+                    .setMessage(name + " wants to join you")
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            try{
+                                responseData.put("confirm", true);
+                                responseData.put("code", data.get("code"));
+                                mSocket.emit("watchRequestResponse", responseData);
+                            }catch (JSONException e){Log.e(LOG_TAG, e.toString());}
+                        }
+                    })
+                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            try{
+                                responseData.put("confirm", false);
+                                responseData.put("code", data.get("code"));
+                                mSocket.emit("watchRequestResponse", responseData);
+                            }catch (JSONException e){Log.e(LOG_TAG, e.toString());}
+                        }
+                    })
+                    .show();
+
+
+
+        } catch (JSONException e){
+            Log.e(LOG_TAG, e.toString());
+        }
+
+    }
 
     private Emitter.Listener onRecieveLocationData = new Emitter.Listener() {
         @Override
@@ -108,8 +237,30 @@ public class MapActivity extends AppCompatActivity {
             System.out.println("---------------onRecieveLocationData - MAP----------------");
             System.out.println(data.toString());
 
-            TextView tv_test = findViewById(R.id.tv_test);
-            tv_test.setText(tv_test.getText() + data.toString() + "\n");
+            //TextView tv_test = findViewById(R.id.tv_test);
+            //tv_test.setText(tv_test.getText() + data.toString() + "\n");
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try{
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
+                        Date time = dateFormat.parse(data.getString("time"));
+                        double lat = data.getDouble("lat");
+                        double lng = data.getDouble("lng");
+                        System.out.println(time + " LAT: " + lat + " LNG: " + lng);
+                        if(map != null){
+                            map.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(time.toString()));
+                            //map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lng), 150));
+                        }
+                    } catch (JSONException e){
+                        Log.e(LOG_TAG, e.toString());
+                    } catch (ParseException e){
+                        Log.e(LOG_TAG, e.toString());
+                    }
+                }
+            });
+
 
         }
     };
@@ -144,5 +295,33 @@ public class MapActivity extends AppCompatActivity {
         mSocket.close();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mapView.onStart();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mapView.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapView.onDestroy();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapView.onLowMemory();
+    }
 }

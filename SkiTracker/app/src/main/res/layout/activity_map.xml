@@ -13,6 +13,7 @@
         android:layout_height="49dp"
         android:text="MAP"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/b_friends2"
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
@@ -22,17 +23,16 @@
         android:layout_height="49dp"
         android:text="FRIENDS"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/b_map2" />
 
-    <TextView
-        android:id="@+id/tv_test"
-        android:layout_width="385dp"
-        android:layout_height="653dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:text="TextView"
+    <com.google.android.gms.maps.MapView
+        android:id="@+id/map"
+        android:layout_width="411dp"
+        android:layout_height="683dp"
+        app:layout_constraintBottom_toTopOf="@+id/b_map2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
