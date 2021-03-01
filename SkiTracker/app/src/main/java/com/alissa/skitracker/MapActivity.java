@@ -24,7 +24,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONException;
@@ -60,11 +62,50 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     private LocationManager locationManager;
 
+    private boolean movedCamera = false;
+
+
     private final LocationListener locationListener = new LocationListener() {
         @Override
         public void onLocationChanged(final Location location) {
             //your code here
             System.out.println(location.toString());
+
+
+
+            JSONObject data = new JSONObject();
+            try {
+
+                Date time = Calendar.getInstance().getTime();
+
+                Location loc = location;
+                TextView tv_debug = findViewById(R.id.tv_debug);
+
+                data.put("time", time);
+                data.put("lat", loc.getLatitude());
+                data.put("lng", loc.getLongitude());
+                data.put("alt", loc.getAltitude());
+                mSocket.emit("recieveNewLocationData", data);
+
+                tv_debug.setText("Sent: " + data.toString());
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(map != null){
+                            MarkerOptions marker = new MarkerOptions().position(new LatLng(loc.getLatitude(), loc.getLongitude())).title(time.toString());
+                            marker.icon(BitmapDescriptorFactory.fromResource(R.drawable.reddot));
+                            map.addMarker(marker);
+                            //map.addMarker(new MarkerOptions().position(new LatLng(loc.getLatitude(), loc.getLongitude())).title(time.toString()));
+                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(loc.getLatitude(), loc.getLongitude()), 1000));
+                        }
+                    }
+                });
+
+            } catch (JSONException e) {
+                Log.e(LOG_TAG, e.toString());
+            }
+
+
         }
 
         @Override
@@ -125,33 +166,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000,
-                0.1f, locationListener);
 
-
-        if (watching == false) {
-            new Timer().scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    JSONObject data = new JSONObject();
-                    try {
-
-                        Date time = Calendar.getInstance().getTime();
-
-                        Location loc = getLocation();
-
-                        data.put("time", time);
-                        data.put("lat", loc.getLatitude());
-                        data.put("lng", loc.getLatitude());
-                        data.put("alt", loc.getAltitude());
-                        mSocket.emit("recieveNewLocationData", data);
-                    } catch (JSONException e) {
-                        Log.e(LOG_TAG, e.toString());
-                    }
-
-                }
-            }, 0, 1000);//put here time 1000 milliseconds=1 second
-
+        if(watching == false){
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000,
+                    0.5f, locationListener);
         }
 
     }
@@ -249,9 +267,18 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         double lat = data.getDouble("lat");
                         double lng = data.getDouble("lng");
                         System.out.println(time + " LAT: " + lat + " LNG: " + lng);
+
+                        TextView tv_debug = findViewById(R.id.tv_debug);
+                        tv_debug.setText("Recieved: " + data.toString());
+
                         if(map != null){
-                            map.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(time.toString()));
-                            //map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lng), 150));
+                            MarkerOptions marker = new MarkerOptions().position(new LatLng(lat, lng)).title(time.toString());
+                            marker.icon(BitmapDescriptorFactory.fromResource(R.drawable.reddot));
+                            map.addMarker(marker);
+                            if(movedCamera == false){
+                                map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lng), 1000));
+                                movedCamera = true;
+                            }
                         }
                     } catch (JSONException e){
                         Log.e(LOG_TAG, e.toString());
