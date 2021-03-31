@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -79,15 +80,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 Date time = Calendar.getInstance().getTime();
 
                 Location loc = location;
-                TextView tv_debug = findViewById(R.id.tv_debug);
+                //TextView tv_debug = findViewById(R.id.tv_debug);
 
                 data.put("time", time);
                 data.put("lat", loc.getLatitude());
                 data.put("lng", loc.getLongitude());
                 data.put("alt", loc.getAltitude());
-                mSocket.emit("recieveNewLocationData", data);
 
-                tv_debug.setText("Sent: " + data.toString());
+
+                //tv_debug.setText("Sent: " + data.toString());
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -96,11 +97,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             marker.icon(BitmapDescriptorFactory.fromResource(R.drawable.reddot));
                             map.addMarker(marker);
                             //map.addMarker(new MarkerOptions().position(new LatLng(loc.getLatitude(), loc.getLongitude())).title(time.toString()));
-                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(loc.getLatitude(), loc.getLongitude()), 1000));
+                            if(movedCamera == false){
+                                map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(loc.getLatitude(), loc.getLongitude()), 1000));
+                                movedCamera = true;
+                            }
+
                         }
                     }
                 });
-
+                mSocket.emit("recieveNewLocationData", data);
             } catch (JSONException e) {
                 Log.e(LOG_TAG, e.toString());
             }
@@ -183,7 +188,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         //map is ready :D
         map = googleMap;
-        map.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
     }
 
     private Emitter.Listener onWatchRequest = new Emitter.Listener() {
@@ -220,7 +224,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     .setMessage(name + " wants to join you")
                     .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
+                        public void onClick(DialogInterface dialogInterface, int i) {//they have pressed YES
                             try{
                                 responseData.put("confirm", true);
                                 responseData.put("code", data.get("code"));
@@ -230,7 +234,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     })
                     .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
                         @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
+                        public void onClick(DialogInterface dialogInterface, int i) {//they have pressed NO
                             try{
                                 responseData.put("confirm", false);
                                 responseData.put("code", data.get("code"));
@@ -263,16 +267,16 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 public void run() {
                     try{
                         SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
-                        Date time = dateFormat.parse(data.getString("time"));
+                        String time = data.getString("time"); //dateFormat.parse(data.getString("time"));
                         double lat = data.getDouble("lat");
                         double lng = data.getDouble("lng");
                         System.out.println(time + " LAT: " + lat + " LNG: " + lng);
 
-                        TextView tv_debug = findViewById(R.id.tv_debug);
-                        tv_debug.setText("Recieved: " + data.toString());
+                        //TextView tv_debug = findViewById(R.id.tv_debug);
+                        //tv_debug.setText("Recieved: " + data.toString());
 
                         if(map != null){
-                            MarkerOptions marker = new MarkerOptions().position(new LatLng(lat, lng)).title(time.toString());
+                            MarkerOptions marker = new MarkerOptions().position(new LatLng(lat, lng)).title(time);
                             marker.icon(BitmapDescriptorFactory.fromResource(R.drawable.reddot));
                             map.addMarker(marker);
                             if(movedCamera == false){
@@ -281,8 +285,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             }
                         }
                     } catch (JSONException e){
-                        Log.e(LOG_TAG, e.toString());
-                    } catch (ParseException e){
                         Log.e(LOG_TAG, e.toString());
                     }
                 }
@@ -311,6 +313,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         }
     };
+
+    public void closeActivity(View v){
+        finish();
+    }
 
     @Override
     protected void onStop() {

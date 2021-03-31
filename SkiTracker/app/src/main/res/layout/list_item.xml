@@ -29,6 +29,8 @@
         android:backgroundTint="#FFFFFF"
         android:onClick="joinButtonPressed"
         android:text="OFFLINE"
+        android:textColor="#FFFFFF"
+        app:backgroundTint="@color/offline"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tv_name"
         app:layout_constraintTop_toTopOf="parent" />

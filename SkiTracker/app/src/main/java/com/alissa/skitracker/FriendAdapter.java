@@ -1,6 +1,7 @@
 package com.alissa.skitracker;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,13 +10,18 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+
 import java.util.ArrayList;
 
 public class FriendAdapter extends ArrayAdapter<Friend> {
 
+    Context c;
 
     public FriendAdapter(Activity context, ArrayList<Friend> friends){
         super(context, 0, friends);
+        this.c = context;
     }
 
 
@@ -42,10 +48,15 @@ public class FriendAdapter extends ArrayAdapter<Friend> {
             } else{
                 b_join.setText("ONLINE");
             }
-            b_join.setBackgroundColor(Color.GREEN);
+            //b_join.setBackgroundColor(Color.GREEN);
+            //b_join.setBackgroundResource(R.color.online);
+            b_join.setBackgroundTintList(ContextCompat.getColorStateList(this.c,R.color.online));
         } else{
             b_join.setText("OFFLINE");
-            b_join.setBackgroundColor(Color.RED);
+            //b_join.setBackgroundColor(Color.RED);
+            //b_join.setBackgroundResource(R.color.offline);
+            b_join.setBackgroundTintList(ContextCompat.getColorStateList(this.c,R.color.offline));
+            // ViewCompat.setBackgroundTintList(b_join, ContextCompat.getColorStateList(this, android.R.color.white));
         }
 
         return listItemView;

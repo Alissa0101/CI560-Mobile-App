@@ -9,21 +9,36 @@
     <Button
         android:id="@+id/b_map"
         style="@style/Widget.AppCompat.Button"
-        android:layout_width="192dp"
+        android:layout_width="0dp"
         android:layout_height="49dp"
+        android:background="@color/teal_200"
         android:onClick="openMap"
         android:text="MAP"
+        android:textColor="#FFFFFF"
+        app:backgroundTint="#707070"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent=".5" />
 
     <Button
         android:id="@+id/b_friends"
         style="@style/Widget.AppCompat.Button"
-        android:layout_width="192dp"
+        android:layout_width="0dp"
         android:layout_height="49dp"
+        android:layout_weight="1"
+        android:background="@color/black"
         android:text="FRIENDS"
+        android:textColor="#FFFFFF"
+        app:backgroundTint="#333333"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent=".5" />
 
     <TextView
         android:id="@+id/tv_myFriendCode"
@@ -72,6 +87,8 @@
         android:layout_marginEnd="10dp"
         android:onClick="updateName"
         android:text="Update"
+        android:textColor="#FFFFFF"
+        app:backgroundTint="#707070"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/et_enterName"
         app:layout_constraintTop_toBottomOf="@+id/tv_myFriendCode" />
@@ -84,6 +101,8 @@
         android:layout_marginEnd="10dp"
         android:onClick="addFriend"
         android:text="Add"
+        android:textColor="#FFFFFF"
+        app:backgroundTint="#707070"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/et_addFriend"
         app:layout_constraintTop_toBottomOf="@+id/b_updateName" />
