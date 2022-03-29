@@ -25,6 +25,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -64,6 +65,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private LocationManager locationManager;
 
     private boolean movedCamera = false;
+
+    //private double lastAlt = 0;
 
 
     private final LocationListener locationListener = new LocationListener() {
@@ -133,7 +136,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         setContentView(R.layout.activity_map);
 
         try {
-            mSocket = IO.socket("http://bw373.brighton.domains:50000/");
+            mSocket = IO.socket("http://62.171.146.191:50000/");
         } catch (URISyntaxException e) {
             Log.e(LOG_TAG + " OwO an ewwor", e.toString());
         }
@@ -161,6 +164,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
+        //Could not get permission requests to work
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -270,20 +274,26 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         String time = data.getString("time"); //dateFormat.parse(data.getString("time"));
                         double lat = data.getDouble("lat");
                         double lng = data.getDouble("lng");
-                        System.out.println(time + " LAT: " + lat + " LNG: " + lng);
+                        double alt = data.getDouble("alt");
+                        System.out.println(time + " LAT: " + lat + " LNG: " + lng + " ALT: " + alt);
 
                         //TextView tv_debug = findViewById(R.id.tv_debug);
                         //tv_debug.setText("Recieved: " + data.toString());
 
                         if(map != null){
                             MarkerOptions marker = new MarkerOptions().position(new LatLng(lat, lng)).title(time);
-                            marker.icon(BitmapDescriptorFactory.fromResource(R.drawable.reddot));
+                            BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.reddot);
+                            //if(alt > lastAlt){
+                            //     icon = BitmapDescriptorFactory.fromResource(R.drawable.greendot);
+                            //}
+                            marker.icon(icon);
                             map.addMarker(marker);
                             if(movedCamera == false){
                                 map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lng), 1000));
                                 movedCamera = true;
                             }
                         }
+                        //lastAlt = alt;
                     } catch (JSONException e){
                         Log.e(LOG_TAG, e.toString());
                     }

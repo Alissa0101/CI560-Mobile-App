@@ -1,6 +1,7 @@
 package com.alissa.skitracker;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -51,9 +52,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         try {
-            mSocket = IO.socket("http://bw373.brighton.domains:50000/");
+            mSocket = IO.socket("http://62.171.146.191:50000/");
         } catch (URISyntaxException e) {
             Log.e(LOG_TAG + " OwO an ewwor", e.toString());
         }
