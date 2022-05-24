@@ -3,16 +3,12 @@ package com.alissa.skitracker;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
@@ -28,19 +24,16 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
@@ -67,6 +60,17 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private boolean movedCamera = false;
 
     //private double lastAlt = 0;
+
+    private String time = "";//data.getString("time"); //dateFormat.parse(data.getString("time"));
+    private double lat = 0;//data.getDouble("lat");
+    private double lng = 0;//data.getDouble("lng");
+    private double alt = 0;//data.getDouble("alt");
+
+
+    private ArrayList<Long> lastTime = new ArrayList<Long>();
+    private ArrayList<Double> lastLAT = new ArrayList<Double>();
+    private ArrayList<Double> lastLNG = new ArrayList<Double>();
+
 
 
     private final LocationListener locationListener = new LocationListener() {
@@ -265,17 +269,32 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             //TextView tv_test = findViewById(R.id.tv_test);
             //tv_test.setText(tv_test.getText() + data.toString() + "\n");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
+
+
+            try{
+                time = data.getString("time");
+                lat = data.getDouble("lat");
+                lng = data.getDouble("lng");
+                alt = data.getDouble("alt");
+            } catch (JSONException e){
+                Log.e(LOG_TAG, e.toString());
+            }
+
+            System.out.println(time + " LAT: " + lat + " LNG: " + lng + " ALT: " + alt);
+            if(lastLAT.size() > 2){
+                System.out.println(time + " LastLAT: " + lastLAT.get(lastLAT.size()-2) + " LastLNG: " + lastLNG.get(lastLNG.size()-2));
+            }
+
+            Long timeMilliseconds = System.currentTimeMillis();
+
 
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    try{
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
-                        String time = data.getString("time"); //dateFormat.parse(data.getString("time"));
-                        double lat = data.getDouble("lat");
-                        double lng = data.getDouble("lng");
-                        double alt = data.getDouble("alt");
-                        System.out.println(time + " LAT: " + lat + " LNG: " + lng + " ALT: " + alt);
+                    //try{
+
+
 
                         //TextView tv_debug = findViewById(R.id.tv_debug);
                         //tv_debug.setText("Recieved: " + data.toString());
@@ -292,14 +311,34 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                 map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lng), 1000));
                                 movedCamera = true;
                             }
+
+
+                            if(lastLAT.size() > 2) {
+                                float[] distanceResults = {0, 0, 0, 0};
+                                Location.distanceBetween(lat, lng, lastLAT.get(lastLAT.size() - 2), lastLNG.get(lastLNG.size()-2), distanceResults);
+
+                                Double timeDiff = (timeMilliseconds.doubleValue() - lastTime.get(lastTime.size() - 2).doubleValue())/1000;
+
+                                Double speed = distanceResults[0]/timeDiff;
+
+                                TextView infoText = (TextView) findViewById(R.id.InfoText);
+                                infoText.setText("Altitude: " + Math.round(alt) + "\n" + "Speed: " + Math.round(speed) + "m/s");
+                            }
+
+
+
                         }
-                        //lastAlt = alt;
-                    } catch (JSONException e){
-                        Log.e(LOG_TAG, e.toString());
-                    }
+                        //
+
+                    //} catch (JSONException e){
+                    //    Log.e(LOG_TAG, e.toString());
+                    //}
                 }
             });
-
+            //lastLAT = lat;
+            lastLAT.add(lat);
+            lastLNG.add(lng);
+            lastTime.add(System.currentTimeMillis());
 
         }
     };
